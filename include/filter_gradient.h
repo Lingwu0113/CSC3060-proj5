@@ -46,7 +46,7 @@ struct filter_gradient_args {
 
 void naive_filter_gradient(float& out, const data_struct& data,
                    std::size_t width, std::size_t height);
-void stu_filter_gradient(float& out, const data_struct& data,
+void stu_filter_gradient(float& out, const optimized_data& opt_data,
                    std::size_t width, std::size_t height);
 
 void naive_filter_gradient_wrapper(void* ctx);

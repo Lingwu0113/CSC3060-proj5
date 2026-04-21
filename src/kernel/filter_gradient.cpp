@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <random>
+#pragma GCC optimize("O3")
+#pragma GCC optimize("unroll-loops")
 
 void initialize_filter_gradient(filter_gradient_args* args,
                         std::size_t width,
@@ -55,7 +57,7 @@ void naive_filter_gradient(float& out, const data_struct& data,
     const std::size_t H = height;
     constexpr float inv9 = 1.0f / 9.0f;
 
-    double total = 0.0f;
+    float total = 0.0f;
 
     for (std::size_t y = 1; y + 1 < H; ++y) {
         for (std::size_t x = 1; x + 1 < W; ++x) {
@@ -126,8 +128,8 @@ void stu_filter_gradient(float& out, const optimized_data& opt_data,
     const std::size_t W = width;
     const std::size_t H = height;
     constexpr float inv9 = 1.0f / 9.0f;
-    
-    double total = 0.0;
+    const PixelData* pixels = opt_data.pixels.data();
+    float total = 0.0;
     
     for (std::size_t y = 1; y + 1 < H; ++y) {
         const std::size_t row_ym1 = (y - 1) * W;
@@ -135,15 +137,15 @@ void stu_filter_gradient(float& out, const optimized_data& opt_data,
         const std::size_t row_yp1 = (y + 1) * W;
         
         for (std::size_t x = 1; x + 1 < W; ++x) {
-            const auto& p00 = opt_data.pixels[row_ym1 + (x - 1)];
-            const auto& p01 = opt_data.pixels[row_ym1 + x];
-            const auto& p02 = opt_data.pixels[row_ym1 + (x + 1)];
-            const auto& p10 = opt_data.pixels[row_y0 + (x - 1)];
-            const auto& p11 = opt_data.pixels[row_y0 + x];
-            const auto& p12 = opt_data.pixels[row_y0 + (x + 1)];
-            const auto& p20 = opt_data.pixels[row_yp1 + (x - 1)];
-            const auto& p21 = opt_data.pixels[row_yp1 + x];
-            const auto& p22 = opt_data.pixels[row_yp1 + (x + 1)];
+            const PixelData& p00 = pixels[row_ym1 + x - 1];
+            const PixelData& p01 = pixels[row_ym1 + x];
+            const PixelData& p02 = pixels[row_ym1 + x + 1];
+            const PixelData& p10 = pixels[row_y0 + x - 1];
+            const PixelData& p11 = pixels[row_y0 + x];
+            const PixelData& p12 = pixels[row_y0 + x + 1];
+            const PixelData& p20 = pixels[row_yp1 + x - 1];
+            const PixelData& p21 = pixels[row_yp1 + x];
+            const PixelData& p22 = pixels[row_yp1 + x + 1];
             
             // Box filter for a, b, c
             float sum_a = p00.a + p01.a + p02.a + p10.a + p11.a + p12.a + p20.a + p21.a + p22.a;
@@ -173,7 +175,7 @@ void stu_filter_gradient(float& out, const optimized_data& opt_data,
         }
     }
     
-    out = static_cast<float>(total);
+    out = total;
 }
 
 void convert_to_optimized(optimized_data& opt, const data_struct& data,

@@ -217,10 +217,34 @@ void naive_sparse_spmm_wrapper(void *ctx) {
     csr_spmm(args.csr, args.dense_t, args.out);
 }
 
-// TODO: Implement your version (e.g. stu_csr_spmm), and call it in stu_sparse_spmm_wrapper
+void stu_csr_spmm(const CSRMatrix &csr, const std::vector<float> &dense_t,
+                  std::vector<float> &out) {
+    const size_t rows = csr.rows;
+    const size_t cols = csr.cols;
+    const size_t dense_cols = dense_t.size() / cols;
+    
+    std::fill(out.begin(), out.end(), 0.0f);
+    
+    for (size_t r = 0; r < rows; ++r) {
+        float* out_row = out.data() + r * dense_cols;
+        const int start = csr.row_ptr[r];
+        const int end = csr.row_ptr[r + 1];
+        
+        for (int p = start; p < end; ++p) {
+            const int col = csr.col_idx[p];
+            const float val = csr.values[p];
+            const float* dense_row = dense_t.data() + col * dense_cols;
+            
+            for (size_t n = 0; n < dense_cols; ++n) {
+                out_row[n] += val * dense_row[n];
+            }
+        }
+    }
+}
+
 void stu_sparse_spmm_wrapper(void *ctx) {
     auto &args = *static_cast<sparse_spmm_args *>(ctx);
-    csr_spmm(args.csr, args.dense_t, args.out);
+    stu_csr_spmm(args.csr, args.dense_t, args.out);
 }
 
 bool sparse_spmm_check(void *stu_ctx, void *ref_ctx, lab_test_func naive_func) {
