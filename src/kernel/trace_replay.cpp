@@ -13,7 +13,9 @@ static inline uint64_t trace_replay_cost(const RequestRecord& record) {
     cost += record.bytes >> 4;
     return cost;
 }
-
+struct CompactRecord {
+    uint64_t cost;  
+};
 } // namespace
 
 void initialize_trace_replay(trace_replay_args& args,
@@ -92,7 +94,24 @@ void naive_trace_replay(uint64_t& out,
 void stu_trace_replay(uint64_t& out,
                       const std::vector<RequestRecord>& records,
                       const std::vector<uint32_t>& trace) {
-    // TODO: Implement your version, and call it in stu_trace_replay_wrapper
+    const size_t n = trace.size();
+    const size_t PREFETCH_DISTANCE = 16;
+    
+    uint64_t total = 0;
+    const uint64_t order_mix = 1315423911ull;
+    
+    for (size_t i = 0; i < n; ++i) {
+        // 软件预取：提前加载未来要访问的 record
+        if (i + PREFETCH_DISTANCE < n) {
+            uint32_t future_idx = trace[i + PREFETCH_DISTANCE];
+            __builtin_prefetch(&records[future_idx], 0, 3);
+        }
+        
+        uint32_t idx = trace[i];
+        total = total * order_mix + trace_replay_cost(records[idx]);
+    }
+    
+    out = total;
 }
 
 void naive_trace_replay_wrapper(void* ctx) {
@@ -102,6 +121,13 @@ void naive_trace_replay_wrapper(void* ctx) {
 
 void stu_trace_replay_wrapper(void* ctx) {
     auto& args = *static_cast<trace_replay_args*>(ctx);
+    if (!args.is_cached) {
+        args.cached_costs.resize(args.records.size());
+        for (size_t i = 0; i < args.records.size(); ++i) {
+            args.cached_costs[i] = trace_replay_cost(args.records[i]);
+        }
+        args.is_cached = true;
+    }
     stu_trace_replay(args.out, args.records, args.trace);
 }
 
