@@ -58,6 +58,63 @@ void naive_bitwise(std::span<std::int8_t> result,
 void stu_bitwise(std::span<std::int8_t> result, std::span<const std::int8_t> a,
                  std::span<const std::int8_t> b) {
     // Implement your version...
+    void stu_bitwise(std::span<std::int8_t> result, std::span<const std::int8_t> a,
+                 std::span<const std::int8_t> b) {
+    constexpr std::uint8_t  kBase8  = 0xA5u;
+    constexpr std::uint8_t  kMask8  = 0x99u;
+    constexpr std::uint64_t kBase64 = 0xA5A5A5A5A5A5A5A5ULL;
+    constexpr std::uint64_t kMask64 = 0x9999999999999999ULL;
+
+    const std::size_t n = std::min({result.size(), a.size(), b.size()});
+
+    const std::int8_t* a_ptr = a.data();
+    const std::int8_t* b_ptr = b.data();
+    std::int8_t* r_ptr = result.data();
+
+    std::size_t i = 0;
+
+    const std::size_t n32 = n - (n % 32);
+    for (; i < n32; i += 32) {
+        std::uint64_t a0, a1, a2, a3;
+        std::uint64_t b0, b1, b2, b3;
+
+        std::memcpy(&a0, a_ptr + i,      8);
+        std::memcpy(&a1, a_ptr + i + 8,  8);
+        std::memcpy(&a2, a_ptr + i + 16, 8);
+        std::memcpy(&a3, a_ptr + i + 24, 8);
+
+        std::memcpy(&b0, b_ptr + i,      8);
+        std::memcpy(&b1, b_ptr + i + 8,  8);
+        std::memcpy(&b2, b_ptr + i + 16, 8);
+        std::memcpy(&b3, b_ptr + i + 24, 8);
+
+        const std::uint64_t r0 = kBase64 ^ ((a0 | b0) & kMask64);
+        const std::uint64_t r1 = kBase64 ^ ((a1 | b1) & kMask64);
+        const std::uint64_t r2 = kBase64 ^ ((a2 | b2) & kMask64);
+        const std::uint64_t r3 = kBase64 ^ ((a3 | b3) & kMask64);
+
+        std::memcpy(r_ptr + i,      &r0, 8);
+        std::memcpy(r_ptr + i + 8,  &r1, 8);
+        std::memcpy(r_ptr + i + 16, &r2, 8);
+        std::memcpy(r_ptr + i + 24, &r3, 8);
+    }
+
+    const std::size_t n8 = n - ((n - i) % 8);
+    for (; i < n8; i += 8) {
+        std::uint64_t va, vb;
+        std::memcpy(&va, a_ptr + i, 8);
+        std::memcpy(&vb, b_ptr + i, 8);
+
+        const std::uint64_t res = kBase64 ^ ((va | vb) & kMask64);
+        std::memcpy(r_ptr + i, &res, 8);
+    }
+
+    for (; i < n; ++i) {
+        const std::uint8_t x =
+            static_cast<std::uint8_t>(a_ptr[i]) |
+            static_cast<std::uint8_t>(b_ptr[i]);
+        r_ptr[i] = static_cast<std::int8_t>(kBase8 ^ (x & kMask8));
+    }
 }
 
 void naive_bitwise_wrapper(void *ctx) {

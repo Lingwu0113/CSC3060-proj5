@@ -31,7 +31,10 @@ void naive_relu(std::span<float> data) {
 }
 
 void stu_relu(std::span<float> data) {
-    // TODO: Implement your version, and call it in stu_relu_wrapper
+    // TODO: Implement your version, and call it in stu_relu
+    for (auto &value : data) {
+        value = std::max(0.0f, value);
+    }
 }
 
 void naive_relu_wrapper(void *ctx) {
