@@ -21,10 +21,20 @@ struct data_struct {
     std::vector<float> i;
 };
 
+struct alignas(64) PixelData {
+    float a, b, c, d, e, f, g, h, i;
+};
+
+struct optimized_data {
+    std::vector<PixelData> pixels;
+    std::size_t width;
+    std::size_t height;
+};
+
 struct filter_gradient_args {
     data_struct data; 
-    // TODO: You may want to add new params at the end...
-
+    optimized_data opt_data;
+    bool is_converted = false;
     std::size_t width;
     std::size_t height;
     float out;
@@ -33,10 +43,6 @@ struct filter_gradient_args {
     explicit filter_gradient_args(double epsilon_in = 1e-6)
         : width(0), height(0), out(0.0f), epsilon(epsilon_in) {}
 };
-
-// TODO: You may need to add a function to convert data structure (not 
-// included in time measurement), then implement your version in 
-// stu_filter_gradient, whch is called by stu_filter_gradient_wrapper.
 
 void naive_filter_gradient(float& out, const data_struct& data,
                    std::size_t width, std::size_t height);
@@ -51,6 +57,8 @@ void initialize_filter_gradient(filter_gradient_args* args,
                         std::size_t height,
                         std::uint_fast64_t seed);
 
+                        
 bool filter_gradient_check(void* stu_ctx, void* ref_ctx, lab_test_func naive_func);
-
+void convert_to_optimized(optimized_data& opt, const data_struct& data, 
+                          std::size_t width, std::size_t height);
 #endif // filter_gradient_H

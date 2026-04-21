@@ -11,10 +11,10 @@
 
 int main() {
     std::uint32_t seed = 12345u;
-    //constexpr size_t relu_size = 1024000;
-   // relu_args relu_args_naive;
-    //initialize_relu(&relu_args_naive, relu_size, seed);
-    //std::println("\tReLU: vector length={}", relu_size);
+    constexpr size_t relu_size = 1024000;
+    relu_args relu_args_naive;
+    initialize_relu(&relu_args_naive, relu_size, seed);
+    std::println("\tReLU: vector length={}", relu_size);
 
     constexpr size_t width = 1024;
     constexpr size_t height = 1024;
@@ -23,13 +23,13 @@ int main() {
     std::println("\tFilterGradient: {} x {}", width, height);
 
     std::vector<bench_t> benchmarks = {
-               // {"ReLU (Naive)",
-                // naive_relu_wrapper,
-                // naive_relu_wrapper,
-                // relu_check,
-                // &relu_args_naive,
-              //   &relu_args_naive,
-             //    BASELINE_RELU},
+                {"ReLU (Naive)",
+                 naive_relu_wrapper,
+                 naive_relu_wrapper,
+                 relu_check,
+                 &relu_args_naive,
+                 &relu_args_naive,
+                 BASELINE_RELU},
 
                  {"FilterGradient",
                  stu_filter_gradient_wrapper,
