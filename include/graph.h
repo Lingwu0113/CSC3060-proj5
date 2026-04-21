@@ -21,18 +21,25 @@ struct Node {
 struct Graph {
     int n;
     Node* nodes;
+    const int* flat_to;
+    const std::size_t* offsets;     
+    std::size_t edge_count;
 };
 
 struct graph_args {
     Graph graph;
     std::vector<Node> nodes;
     std::vector<Edge> edge_storage;
+
+    // TODO: You may want to add new params at the end...
+    std::vector<int> flat_to;
+    std::vector<std::size_t> offsets;
+
     std::uint64_t out;
     double epsilon;
-    // TODO: You may want to add new params at the end...
 
     explicit graph_args(double epsilon_in = 1e-6)
-        : graph{0, nullptr}, out{0}, epsilon{epsilon_in} {}
+        : graph{0, nullptr, nullptr, nullptr, 0}, out{0}, epsilon{epsilon_in} {}
 };
 
 void naive_graph(std::uint64_t& out, const Graph& graph);

@@ -6,11 +6,10 @@
 #include <random>
 #include <vector>
 
-
 void initialize_graph(graph_args* args,
-                       std::size_t node_count,
-                       int avg_degree,
-                       std::uint_fast64_t seed) {
+                      std::size_t node_count,
+                      int avg_degree,
+                      std::uint_fast64_t seed) {
     if (!args) {
         return;
     }
@@ -18,34 +17,50 @@ void initialize_graph(graph_args* args,
     std::mt19937_64 gen(seed);
     std::uniform_int_distribution<int> dist(0, static_cast<int>(node_count) - 1);
 
+    const std::size_t total_edges =
+        node_count * static_cast<std::size_t>(avg_degree);
+
+    // Naive linked-list representation (for reference implementation)
     args->nodes.assign(node_count, Node{nullptr});
     args->edge_storage.clear();
-    args->edge_storage.resize(node_count * static_cast<std::size_t>(avg_degree));
+    args->edge_storage.resize(total_edges);
 
-    args->graph.n = static_cast<int>(node_count);
-    args->graph.nodes = args->nodes.data();
+    // Optimized contiguous representation
+    args->flat_to.clear();
+    args->flat_to.resize(total_edges);
+    args->offsets.clear();
+    args->offsets.resize(node_count + 1, 0);
 
     std::size_t edge_pos = 0;
+    args->offsets[0] = 0;
 
     for (std::size_t u = 0; u < node_count; ++u) {
-        std::vector<int> neighbors;
-        neighbors.reserve(avg_degree);
+        const std::size_t base = edge_pos;
 
+        // Generate neighbors directly into contiguous storage
         for (int k = 0; k < avg_degree; ++k) {
-            neighbors.push_back(dist(gen));
+            args->flat_to[base + static_cast<std::size_t>(k)] = dist(gen);
         }
 
+        // Build the naive linked list using the same values
         Edge* head = nullptr;
-        for (int k = avg_degree - 1; k >= 0; --k) {
-            Edge& e = args->edge_storage[edge_pos + static_cast<std::size_t>(k)];
-            e.to = neighbors[static_cast<std::size_t>(k)];
+        for (int k = avg_degree; k-- > 0;) {
+            Edge& e = args->edge_storage[base + static_cast<std::size_t>(k)];
+            e.to = args->flat_to[base + static_cast<std::size_t>(k)];
             e.next = head;
             head = &e;
         }
 
         args->nodes[u].edges = head;
         edge_pos += static_cast<std::size_t>(avg_degree);
+        args->offsets[u + 1] = edge_pos;
     }
+
+    args->graph.n = static_cast<int>(node_count);
+    args->graph.nodes = args->nodes.data();
+    args->graph.flat_to = args->flat_to.data();
+    args->graph.offsets = args->offsets.data();
+    args->graph.edge_count = total_edges;
 
     args->out = 0;
 }
@@ -63,9 +78,37 @@ void naive_graph(std::uint64_t& out, const Graph& graph) {
 }
 
 void stu_graph(std::uint64_t& out, const Graph& graph) {
-    // TODO: You may need to add a function to convert data structure (not
-    // included in time measurement), then implement your version in
-    // stu_graph, whch is called by stu_graph_wrapper.
+    const int* p = graph.flat_to;
+    const std::size_t m = graph.edge_count;
+
+    if (p == nullptr || m == 0) {
+        out = 0;
+        return;
+    }
+
+    // Unrolled sequential scan over contiguous memory
+    std::uint64_t s0 = 0, s1 = 0, s2 = 0, s3 = 0;
+    std::uint64_t s4 = 0, s5 = 0, s6 = 0, s7 = 0;
+
+    std::size_t i = 0;
+    for (; i + 8 <= m; i += 8) {
+        s0 += static_cast<std::uint64_t>(p[i]);
+        s1 += static_cast<std::uint64_t>(p[i + 1]);
+        s2 += static_cast<std::uint64_t>(p[i + 2]);
+        s3 += static_cast<std::uint64_t>(p[i + 3]);
+        s4 += static_cast<std::uint64_t>(p[i + 4]);
+        s5 += static_cast<std::uint64_t>(p[i + 5]);
+        s6 += static_cast<std::uint64_t>(p[i + 6]);
+        s7 += static_cast<std::uint64_t>(p[i + 7]);
+    }
+
+    std::uint64_t sum = (s0 + s1) + (s2 + s3) + (s4 + s5) + (s6 + s7);
+
+    for (; i < m; ++i) {
+        sum += static_cast<std::uint64_t>(p[i]);
+    }
+
+    out = sum;
 }
 
 void naive_graph_wrapper(void* ctx) {
