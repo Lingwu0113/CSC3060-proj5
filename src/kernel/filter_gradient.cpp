@@ -5,8 +5,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <random>
-#pragma GCC optimize("O3")
-#pragma GCC optimize("unroll-loops")
 
 void initialize_filter_gradient(filter_gradient_args* args,
                         std::size_t width,

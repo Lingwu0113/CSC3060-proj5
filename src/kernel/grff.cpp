@@ -78,7 +78,60 @@ void naive_grff(grff_args& args) {
 // TODO: Student Implementation
 // -------------------------------------------------------------------------
 void stu_grff(grff_args& args) {
-
+const size_t n = args.a_features.size();
+    
+    const float* a = args.a_features.data();
+    const float* b = args.b_features.data();
+    const float* c = args.c_features.data();
+    float* out = args.f_output.data();
+    
+    static thread_local std::vector<float> G, A_prime, B_prime, C_prime, Smooth_A;
+    G.resize(n);
+    A_prime.resize(n);
+    B_prime.resize(n);
+    C_prime.resize(n);
+    Smooth_A.resize(n);
+    
+    float* g = G.data();
+    float* ap = A_prime.data();
+    float* bp = B_prime.data();
+    float* cp = C_prime.data();
+    float* sm = Smooth_A.data();
+    
+    float sum_a = 0.0f;
+    for (size_t i = 0; i < n; ++i) {
+        float ai = a[i];
+        float bi = b[i];
+        float ab = ai * bi;
+        float g_val = 0.5f * (ab / (1.0f + std::abs(ab)) + 1.0f);
+        g[i] = g_val;
+        float ap_val = ai + g_val;
+        ap[i] = ap_val;
+        sum_a += ap_val;
+    }
+    const float avg_a = sum_a / static_cast<float>(n);
+    
+    sm[0] = ap[0];
+    for (size_t i = 1; i < n; ++i) {
+        sm[i] = (ap[i] + ap[i-1]) * 0.5f;
+    }
+    
+    for (size_t i = 0; i < n; ++i) {
+        bp[i] = b[i] * (1.0f - g[i]) * avg_a;
+    }
+    
+    for (size_t i = 0; i < n; ++i) {
+        float smooth = sm[i];
+        cp[i] = c[i] + (smooth / (1.0f + std::abs(smooth)));
+    }
+    
+    for (size_t i = 0; i < n; ++i) {
+        float smooth = sm[i];
+        float h_val = smooth * cp[i];
+        float e_val = (h_val + bp[i]) / (1.0f + std::abs(smooth));
+        float result = cp[i] - e_val;
+        out[i] = (result > 0.0f) ? result : 0.0f;
+    }
 }
 
 // -------------------------------------------------------------------------
