@@ -1,5 +1,0 @@
-/Users/eason/Desktop/csc3060/CSC3060_Project5_Code_Optimization/build/CMakeFiles/kernels.dir
-/Users/eason/Desktop/csc3060/CSC3060_Project5_Code_Optimization/build/CMakeFiles/single_bench.dir
-/Users/eason/Desktop/csc3060/CSC3060_Project5_Code_Optimization/build/CMakeFiles/run_all.dir
-/Users/eason/Desktop/csc3060/CSC3060_Project5_Code_Optimization/build/CMakeFiles/edit_cache.dir
-/Users/eason/Desktop/csc3060/CSC3060_Project5_Code_Optimization/build/CMakeFiles/rebuild_cache.dir
