@@ -21,7 +21,8 @@ struct trace_replay_args {
     uint64_t out = 0;
     std::vector<RequestRecord> records;
     std::vector<uint32_t> trace;
-    // TODO: You may want to add new params at the end...
+    std::vector<uint64_t> cached_costs;
+    bool is_cached = false;
 };
 
 void initialize_trace_replay(trace_replay_args& args,
