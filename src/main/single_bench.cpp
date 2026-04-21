@@ -7,23 +7,37 @@
 
 #include "bench.h"
 #include "relu.h"
-
+#include "filter_gradient.h"
 
 int main() {
     std::uint32_t seed = 12345u;
-    constexpr size_t relu_size = 1024000;
-    relu_args relu_args_naive;
-    initialize_relu(&relu_args_naive, relu_size, seed);
-    std::println("\tReLU: vector length={}", relu_size);
+    //constexpr size_t relu_size = 1024000;
+   // relu_args relu_args_naive;
+    //initialize_relu(&relu_args_naive, relu_size, seed);
+    //std::println("\tReLU: vector length={}", relu_size);
+
+    constexpr size_t width = 1024;
+    constexpr size_t height = 1024;
+    filter_gradient_args filter_args;
+    initialize_filter_gradient(&filter_args, width, height, seed);
+    std::println("\tFilterGradient: {} x {}", width, height);
 
     std::vector<bench_t> benchmarks = {
-                {"ReLU (Naive)",
-                 naive_relu_wrapper,
-                 naive_relu_wrapper,
-                 relu_check,
-                 &relu_args_naive,
-                 &relu_args_naive,
-                 BASELINE_RELU},
+               // {"ReLU (Naive)",
+                // naive_relu_wrapper,
+                // naive_relu_wrapper,
+                // relu_check,
+                // &relu_args_naive,
+              //   &relu_args_naive,
+             //    BASELINE_RELU},
+
+                 {"FilterGradient",
+                 stu_filter_gradient_wrapper,
+                 naive_filter_gradient_wrapper,
+                 filter_gradient_check,
+                 &filter_args,
+                 &filter_args,
+                 BASELINE_FILTER_GRADIENT}
     };
     std::cout << "\nRunning Benchmarks...\n";
     std::cout << "--------------------------------------------------------\n";
