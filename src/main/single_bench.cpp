@@ -10,7 +10,7 @@
 #include "bitwise.h"
 #include "graph.h"
 #include "filter_gradient.h"
-
+#include "matmul.h"
 
 int main() {
     std::uint32_t seed = 12345u;
@@ -38,13 +38,20 @@ int main() {
     //std::println("\tFilterGradient: {} x {}", width, height);
 
     //graph
-    constexpr size_t node_count = 1024000;
-    constexpr int avg_degree = 8;
-    graph_args graph_args_naive;
-    graph_args graph_args_stu;
-    initialize_graph(&graph_args_naive, node_count, avg_degree, seed);
-    initialize_graph(&graph_args_stu, node_count, avg_degree, seed);
-    std::println("\tGraph: node_count={}, avg_degree={}", node_count, avg_degree);
+    //constexpr size_t node_count = 1024000;
+    //constexpr int avg_degree = 8;
+    //graph_args graph_args_naive;
+    //graph_args graph_args_stu;
+    //initialize_graph(&graph_args_naive, node_count, avg_degree, seed);
+    //initialize_graph(&graph_args_stu, node_count, avg_degree, seed);
+    //std::println("\tGraph: node_count={}, avg_degree={}",node_count, avg_degree);
+
+    //matmul
+    matmul_args matmul_args_naive;
+    matmul_args matmul_args_stu;
+    initialize_matmul(matmul_args_naive, 512, seed);
+    initialize_matmul(matmul_args_stu, 512, seed);
+    std::println("\tMatMul: n={}", matmul_args_naive.n);
 
     std::vector<bench_t> benchmarks = {
                 //{"ReLU (Naive)",
@@ -87,21 +94,36 @@ int main() {
                 //&filter_args,
                 //BASELINE_FILTER_GRADIENT}
 
-                {"Graph (Naive)",
-                naive_graph_wrapper,
-                naive_graph_wrapper,
-                graph_check,
-                &graph_args_naive,
-                &graph_args_naive,
-                BASELINE_GRAPH},
+                //{"Graph (Naive)",
+                //naive_graph_wrapper,
+                //naive_graph_wrapper,
+                //graph_check,
+                //&graph_args_naive,
+                //&graph_args_naive,
+                //BASELINE_GRAPH},
 
-                {"Graph (Stu)",
-                stu_graph_wrapper,
-                naive_graph_wrapper,
-                graph_check,
-                &graph_args_stu,
-                &graph_args_naive,
-                BASELINE_GRAPH}
+                //{"Graph (Stu)",
+                //stu_graph_wrapper,
+                //naive_graph_wrapper,
+                //graph_check,
+                //&graph_args_stu,
+                //&graph_args_naive,
+                //BASELINE_GRAPH}
+                {"MatMul (Naive)",
+                 naive_matmul_wrapper,
+                 naive_matmul_wrapper,
+                 matmul_check,
+                 &matmul_args_naive,
+                 &matmul_args_naive,
+                 BASELINE_MATMUL},
+
+                {"MatMul (Stu)",
+                 stu_matmul_wrapper,
+                 naive_matmul_wrapper,
+                 matmul_check,
+                 &matmul_args_naive,
+                 &matmul_args_naive,
+                 BASELINE_MATMUL}
                 
     };
     std::cout << "\nRunning Benchmarks...\n";

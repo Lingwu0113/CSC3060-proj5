@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <vector>
 
-void initialize_matmul(matmul_args& args, int n, uint32_t seed) {
+void initialize_matmul(matmul_args &args, int n, uint32_t seed) {
     if (n <= 0) {
         throw std::invalid_argument("initialize_matmul: n must be positive.");
     }
@@ -27,10 +27,8 @@ void initialize_matmul(matmul_args& args, int n, uint32_t seed) {
     }
 }
 
-void naive_matmul(std::vector<float>& C,
-                  const std::vector<float>& A,
-                  const std::vector<float>& B,
-                  int n) {
+void naive_matmul(std::vector<float> &C, const std::vector<float> &A,
+                  const std::vector<float> &B, int n) {
     std::fill(C.begin(), C.end(), 0.0f);
 
     for (int i = 0; i < n; ++i) {
@@ -43,29 +41,70 @@ void naive_matmul(std::vector<float>& C,
         }
     }
 }
+// TODO: Implement your version, and call it in stu_matmul_wrapper
+void stu_matmul(std::vector<float> &C, const std::vector<float> &A,
+                const std::vector<float> &B, int n) {
+    std::fill(C.begin(), C.end(), 0.0f);
 
-void stu_matmul(std::vector<float>& C,
-                const std::vector<float>& A,
-                const std::vector<float>& B,
-                int n) {
-    // TODO: Implement your version, and call it in stu_matmul_wrapper
+    const float *a = A.data();
+    const float *b = B.data();
+    float *c = C.data();
+
+    constexpr int BS = 32;
+
+    for (int ii = 0; ii < n; ii += BS) {
+        const int i_end = std::min(ii + BS, n);
+
+        for (int kk = 0; kk < n; kk += BS) {
+            const int k_end = std::min(kk + BS, n);
+
+            for (int jj = 0; jj < n; jj += BS) {
+                const int j_end = std::min(jj + BS, n);
+
+                for (int i = ii; i < i_end; ++i) {
+                    float *c_row = c + i * n;
+                    const float *a_row = a + i * n;
+
+                    for (int k = kk; k < k_end; ++k) {
+                        const float a_val = a_row[k];
+                        const float *b_row = b + k * n;
+
+                        int j = jj;
+                        for (; j + 7 < j_end; j += 8) {
+                            c_row[j] += a_val * b_row[j];
+                            c_row[j + 1] += a_val * b_row[j + 1];
+                            c_row[j + 2] += a_val * b_row[j + 2];
+                            c_row[j + 3] += a_val * b_row[j + 3];
+                            c_row[j + 4] += a_val * b_row[j + 4];
+                            c_row[j + 5] += a_val * b_row[j + 5];
+                            c_row[j + 6] += a_val * b_row[j + 6];
+                            c_row[j + 7] += a_val * b_row[j + 7];
+                        }
+                        for (; j < j_end; ++j) {
+                            c_row[j] += a_val * b_row[j];
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
-void naive_matmul_wrapper(void* ctx) {
-    auto& args = *static_cast<matmul_args*>(ctx);
+void naive_matmul_wrapper(void *ctx) {
+    auto &args = *static_cast<matmul_args *>(ctx);
     naive_matmul(args.C, args.A, args.B, args.n);
 }
 
-void stu_matmul_wrapper(void* ctx) {
-    auto& args = *static_cast<matmul_args*>(ctx);
+void stu_matmul_wrapper(void *ctx) {
+    auto &args = *static_cast<matmul_args *>(ctx);
     stu_matmul(args.C, args.A, args.B, args.n);
 }
 
-bool matmul_check(void* stu_ctx, void* ref_ctx, lab_test_func naive_func) {
+bool matmul_check(void *stu_ctx, void *ref_ctx, lab_test_func naive_func) {
     naive_func(ref_ctx);
 
-    auto& stu_args = *static_cast<matmul_args*>(stu_ctx);
-    auto& ref_args = *static_cast<matmul_args*>(ref_ctx);
+    auto &stu_args = *static_cast<matmul_args *>(stu_ctx);
+    auto &ref_args = *static_cast<matmul_args *>(ref_ctx);
 
     if (stu_args.C.size() != ref_args.C.size()) {
         debug_log("\tDEBUG: matmul size mismatch: stu={} ref={}\n",
@@ -93,7 +132,8 @@ bool matmul_check(void* stu_ctx, void* ref_ctx, lab_test_func naive_func) {
         if (rel > eps) {
             const size_t row = (n > 0) ? (i / static_cast<size_t>(n)) : 0;
             const size_t col = (n > 0) ? (i % static_cast<size_t>(n)) : 0;
-            debug_log("\tDEBUG: matmul fail at index {} (row={}, col={}): ref={} stu={} rel={} eps={}\n",
+            debug_log("\tDEBUG: matmul fail at index {} (row={}, col={}): "
+                      "ref={} stu={} rel={} eps={}\n",
                       i,
                       row,
                       col,
