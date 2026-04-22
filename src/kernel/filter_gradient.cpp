@@ -138,45 +138,100 @@ void stu_filter_gradient(float& out, const optimized_data& opt_data,
         const PixelData* row_y0_ptr  = pixels + row_y0;
         const PixelData* row_yp1_ptr = pixels + row_yp1;
         
+        const PixelData* left_top = &row_ym1_ptr[0];
+        const PixelData* left_mid = &row_y0_ptr[0];
+        const PixelData* left_bot = &row_yp1_ptr[0];
+
+        const PixelData* mid_top = &row_ym1_ptr[1];
+        const PixelData* mid_mid = &row_y0_ptr[1];
+        const PixelData* mid_bot = &row_yp1_ptr[1];
+
+        const PixelData* right_top = &row_ym1_ptr[2];
+        const PixelData* right_mid = &row_y0_ptr[2];
+        const PixelData* right_bot = &row_yp1_ptr[2];
+
+        float colA_left  = left_top->a  + left_mid->a  + left_bot->a;
+        float colA_mid   = mid_top->a   + mid_mid->a   + mid_bot->a;
+        float colA_right = right_top->a + right_mid->a + right_bot->a;
+
+        float colB_left  = left_top->b  + left_mid->b  + left_bot->b;
+        float colB_mid   = mid_top->b   + mid_mid->b   + mid_bot->b;
+        float colB_right = right_top->b + right_mid->b + right_bot->b;
+
+        float colC_left  = left_top->c  + left_mid->c  + left_bot->c;
+        float colC_mid   = mid_top->c   + mid_mid->c   + mid_bot->c;
+        float colC_right = right_top->c + right_mid->c + right_bot->c;
+
         for (std::size_t x = 1; x + 1 < W; ++x) {
-            const PixelData& p00 = row_ym1_ptr[x - 1];
-            const PixelData& p01 = row_ym1_ptr[x];
-            const PixelData& p02 = row_ym1_ptr[x + 1];
-            const PixelData& p10 = row_y0_ptr[x - 1];
-            const PixelData& p11 = row_y0_ptr[x];
-            const PixelData& p12 = row_y0_ptr[x + 1];
-            const PixelData& p20 = row_yp1_ptr[x - 1];
-            const PixelData& p21 = row_yp1_ptr[x];
-            const PixelData& p22 = row_yp1_ptr[x + 1];
-            
-            // Box filter for a, b, c
-            float sum_a = p00.a + p01.a + p02.a + p10.a + p11.a + p12.a + p20.a + p21.a + p22.a;
-            float sum_b = p00.b + p01.b + p02.b + p10.b + p11.b + p12.b + p20.b + p21.b + p22.b;
-            float sum_c = p00.c + p01.c + p02.c + p10.c + p11.c + p12.c + p20.c + p21.c + p22.c;
-            
+            const float sum_a = colA_left + colA_mid + colA_right;
+            const float sum_b = colB_left + colB_mid + colB_right;
+            const float sum_c = colC_left + colC_mid + colC_right;
+
             const float avg_a = sum_a * inv9;
             const float avg_b = sum_b * inv9;
             const float avg_c = sum_c * inv9;
             const float p1 = avg_a * avg_b + avg_c;
             
-            // Sobel X for d, e, f
-            float sobel_dx = -p00.d + p02.d - 2.0f * p10.d + 2.0f * p12.d - p20.d + p22.d;
-            float sobel_ex = -p00.e + p02.e - 2.0f * p10.e + 2.0f * p12.e - p20.e + p22.e;
-            float sobel_fx = -p00.f + p02.f - 2.0f * p10.f + 2.0f * p12.f - p20.f + p22.f;
-            
+            const float sobel_dx =
+                -left_top->d  + right_top->d
+                -2.0f * left_mid->d + 2.0f * right_mid->d
+                -left_bot->d  + right_bot->d;
+
+            const float sobel_ex =
+                -left_top->e  + right_top->e
+                -2.0f * left_mid->e + 2.0f * right_mid->e
+                -left_bot->e  + right_bot->e;
+
+            const float sobel_fx =
+                -left_top->f  + right_top->f
+                -2.0f * left_mid->f + 2.0f * right_mid->f
+                -left_bot->f  + right_bot->f;
+
             const float p2 = sobel_dx * sobel_ex + sobel_fx;
             
-            // Sobel Y for g, h, i
-            float sobel_gy = -p00.g - 2.0f * p01.g - p02.g + p20.g + 2.0f * p21.g + p22.g;
-            float sobel_hy = -p00.h - 2.0f * p01.h - p02.h + p20.h + 2.0f * p21.h + p22.h;
-            float sobel_iy = -p00.i - 2.0f * p01.i - p02.i + p20.i + 2.0f * p21.i + p22.i;
-            
+            const float sobel_gy =
+                -left_top->g - 2.0f * mid_top->g - right_top->g
+                + left_bot->g + 2.0f * mid_bot->g + right_bot->g;
+
+            const float sobel_hy =
+                -left_top->h - 2.0f * mid_top->h - right_top->h
+                + left_bot->h + 2.0f * mid_bot->h + right_bot->h;
+
+            const float sobel_iy =
+                -left_top->i - 2.0f * mid_top->i - right_top->i
+                + left_bot->i + 2.0f * mid_bot->i + right_bot->i;
+
             const float p3 = sobel_gy * sobel_hy + sobel_iy;
-            
+
             total += p1 + p2 + p3;
+            
+            if (x + 2 < W) {
+                left_top = mid_top;
+                left_mid = mid_mid;
+                left_bot = mid_bot;
+
+                mid_top = right_top;
+                mid_mid = right_mid;
+                mid_bot = right_bot;
+
+                right_top = &row_ym1_ptr[x + 2];
+                right_mid = &row_y0_ptr[x + 2];
+                right_bot = &row_yp1_ptr[x + 2];
+
+                colA_left  = colA_mid;
+                colA_mid   = colA_right;
+                colA_right = right_top->a + right_mid->a + right_bot->a;
+
+                colB_left  = colB_mid;
+                colB_mid   = colB_right;
+                colB_right = right_top->b + right_mid->b + right_bot->b;
+
+                colC_left  = colC_mid;
+                colC_mid   = colC_right;
+                colC_right = right_top->c + right_mid->c + right_bot->c;
+            }
         }
     }
-    
     out = total;
 }
 
