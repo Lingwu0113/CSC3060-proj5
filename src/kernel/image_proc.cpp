@@ -169,115 +169,34 @@ void stu_image_proc(image_proc_args& args) {
     const float* __restrict__ g = args.g_channel.data();
     const float* __restrict__ b = args.b_channel.data();
     const float threshold = args.threshold;
-    
-    const float gain_factor = 1.05f;
-    const float shift_val = 0.02f;
-    const float gray_r = 0.299f;
-    const float gray_g = 0.587f;
-    const float gray_b = 0.114f;
-    const float contrast_low = 0.05f;
-    const float contrast_range = 0.90f;
-    
-    constexpr float p0 = 0.11f;
-    constexpr float p1 = 0.22f;
-    constexpr float p2 = 0.33f;
-    constexpr float p3 = 0.44f;
-    constexpr float p4 = 0.55f;
-    constexpr float p5 = 0.66f;
-    constexpr float p6 = 0.77f;
-    constexpr float p7 = 0.88f;
-    constexpr float p8 = 0.99f;
-    constexpr float p9 = 1.01f;
-    
-    constexpr float lut0 = 0.0f;
-    constexpr float lut1 = 0.3f;
-    constexpr float lut2 = 1.0f;
-    constexpr float lut3 = 0.3f;
-    constexpr float lut4 = 0.0f;
-    
+
     for (size_t y = 0; y < h; ++y) {
         for (size_t x = 0; x < w; ++x) {
             size_t i = y * w + x;
-            // ================= Stage 1: color_correct =================
-            float r_val = r[i] * gain_factor + shift_val;
-            float g_val = g[i] * gain_factor + shift_val;
-            float b_val = b[i] * gain_factor + shift_val;
 
-            if (r_val > 1.0f) r_val = 1.0f;
-            if (g_val > 1.0f) g_val = 1.0f;
-            if (b_val > 1.0f) b_val = 1.0f;
+            // Stage 1: Update RGB Value
+            float r_val = color_correct(r[i]);
+            float g_val = color_correct(g[i]);
+            float b_val = color_correct(b[i]);
 
-            // ================= Stage 2: compute_gray =================
-            const float gray = r_val * gray_r + g_val * gray_g + b_val * gray_b;
+            // Stage 2: Luminance Extraction
+            float gray = compute_gray(r_val, g_val, b_val);
 
-            // ================= Stage 3: enhance_contrast =================
-            float adjusted = (gray - contrast_low) / contrast_range;
-            if (adjusted < 0.0f) adjusted = 0.0f;
-            if (adjusted > 1.0f) adjusted = 1.0f;
+            // Stage 3: Contrast Enhancement
+            float grayEnhance = enhance_contrast(gray);
 
-            const float gray_enhance =
-                adjusted * adjusted * (3.0f - 2.0f * adjusted);
+            // Stage 4: HDR Compression
+            float compress_val = hdr_compress(grayEnhance);
 
-            // ================= Stage 4: hdr_compress =================
-            const float intensity = gray_enhance * 1.2f;
-            const float g1 = intensity * 0.5f;
-            const float g2 = g1 * g1 + 0.1f;
-            const float g3 = std::sqrt(g2);
-            const float gain = (g3 > 1.0f) ? (1.0f / g3) : (g3 * 0.95f);
+            // Stage 5: Masking
+            float mask = complex_mask_logic(
+                compress_val, r_val, g_val, b_val, threshold);
 
-            const float hdr_val = gray_enhance * gain;
-            const float compress_val = hdr_val / (1.0f + hdr_val);
+            // Stage 6: Importance Weighting
+            float weight = importance_weight(mask);
 
-            // ================= Stage 5: complex_mask_logic =================
-            float mask;
-            if (compress_val > threshold) {
-                mask = (r_val * p0) + (g_val * p1) - (b_val * p2) + p9;
-                if (mask > 0.8f) {
-                    mask *= p3;
-                } else {
-                    mask += p4;
-                }
-            } else {
-                mask = (r_val * p5) - (g_val * p6) + (b_val * p7) - p8;
-                if (mask < 0.2f) {
-                    mask += p1;
-                } else {
-                    mask *= p2;
-                }
-            }
-
-            const float noise = std::sin(compress_val * p0) * std::cos(r_val * p1);
-            float final_val = mask * 0.7f + noise * 0.3f;
-
-            if (final_val < 0.0f) final_val = 0.0f;
-            if (final_val > 1.0f) final_val = 1.0f;
-
-            // ================= Stage 6: importance_weight =================
-            const float scaled = final_val * 4.0f;
-            int idx = static_cast<int>(scaled);
-            if (idx < 0) idx = 0;
-            if (idx > 4) idx = 4;
-
-            float weight;
-            if (idx < 4) {
-                const float frac = scaled - static_cast<float>(idx);
-                float left, right;
-                switch (idx) {
-                    case 0: left = lut0; right = lut1; break;
-                    case 1: left = lut1; right = lut2; break;
-                    case 2: left = lut2; right = lut3; break;
-                    default: left = lut3; right = lut4; break;
-                }
-                weight = left * (1.0f - frac) + right * frac;
-            } else {
-                weight = lut4;
-            }
-            // ================= Output =================
-            float result = compress_val * weight;
-            if (result < 0.0f) result = 0.0f;
-            if (result > 1.0f) result = 1.0f;
-
-            out[i] = result;
+            // Output
+            out[i] = std::clamp(compress_val * weight, 0.0f, 1.0f);
         }
     }
 }
