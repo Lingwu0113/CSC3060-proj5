@@ -6,6 +6,11 @@
 #include <cstdint>
 #include <random>
 
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC optimize("O3")
+#pragma GCC optimize("unroll-loops")
+#endif
+
 void initialize_filter_gradient(filter_gradient_args* args,
                         std::size_t width,
                         std::size_t height,
