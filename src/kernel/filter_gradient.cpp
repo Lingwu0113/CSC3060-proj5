@@ -133,17 +133,21 @@ void stu_filter_gradient(float& out, const optimized_data& opt_data,
         const std::size_t row_ym1 = (y - 1) * W;
         const std::size_t row_y0  = y * W;
         const std::size_t row_yp1 = (y + 1) * W;
+
+        const PixelData* row_ym1_ptr = pixels + row_ym1;
+        const PixelData* row_y0_ptr  = pixels + row_y0;
+        const PixelData* row_yp1_ptr = pixels + row_yp1;
         
         for (std::size_t x = 1; x + 1 < W; ++x) {
-            const PixelData& p00 = pixels[row_ym1 + x - 1];
-            const PixelData& p01 = pixels[row_ym1 + x];
-            const PixelData& p02 = pixels[row_ym1 + x + 1];
-            const PixelData& p10 = pixels[row_y0 + x - 1];
-            const PixelData& p11 = pixels[row_y0 + x];
-            const PixelData& p12 = pixels[row_y0 + x + 1];
-            const PixelData& p20 = pixels[row_yp1 + x - 1];
-            const PixelData& p21 = pixels[row_yp1 + x];
-            const PixelData& p22 = pixels[row_yp1 + x + 1];
+            const PixelData& p00 = row_ym1_ptr[x - 1];
+            const PixelData& p01 = row_ym1_ptr[x];
+            const PixelData& p02 = row_ym1_ptr[x + 1];
+            const PixelData& p10 = row_y0_ptr[x - 1];
+            const PixelData& p11 = row_y0_ptr[x];
+            const PixelData& p12 = row_y0_ptr[x + 1];
+            const PixelData& p20 = row_yp1_ptr[x - 1];
+            const PixelData& p21 = row_yp1_ptr[x];
+            const PixelData& p22 = row_yp1_ptr[x + 1];
             
             // Box filter for a, b, c
             float sum_a = p00.a + p01.a + p02.a + p10.a + p11.a + p12.a + p20.a + p21.a + p22.a;
