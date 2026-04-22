@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <random>
+#include <limits>
 
 #define inv_sqrt_2xPI 0.39894228040143270286
 #define p_val 0.2316419
@@ -123,9 +124,88 @@ void stu_BlkSchls(std::vector<float> &CallOptionPrice,
                   const std::vector<float> &rate,
                   const std::vector<float> &volatility,
                   const std::vector<float> &time) {
-    // TODO:
-    // Implement your version for BlkSchls here, then 
-    // call it at stu_BlkSchls_wrapper()...
+     const std::size_t n = spotPrice.size();
+
+    float* call_ptr = CallOptionPrice.data();
+    float* put_ptr  = PutOptionPrice.data();
+
+    const float* s_ptr = spotPrice.data();
+    const float* k_ptr = strike.data();
+    const float* r_ptr = rate.data();
+    const float* v_ptr = volatility.data();
+    const float* t_ptr = time.data();
+
+    auto cndf_inline = [](float x) -> float {
+        const float ax = (x < 0.0f) ? -x : x;
+        const float k = 1.0f / (1.0f + p_val * ax);
+
+        const float poly =
+            ((((coefficient_a5 * k + coefficient_a4) * k + coefficient_a3) * k
+              + coefficient_a2) * k + coefficient_a1) * k;
+
+        const float pdf = std::exp(-0.5f * ax * ax) * inv_sqrt_2xPI;
+        const float cdf = 1.0f - poly * pdf;
+
+        return (x < 0.0f) ? (1.0f - cdf) : cdf;
+    };
+
+    std::size_t i = 0;
+
+    for (; i + 4 <= n; i += 4) {
+        for (int u = 0; u < 4; ++u) {
+            const float S = s_ptr[i + u];
+            const float K = k_ptr[i + u];
+            const float R = r_ptr[i + u];
+            const float V = v_ptr[i + u];
+            const float T = t_ptr[i + u];
+
+            const float sqrtT = std::sqrt(T);
+            const float sigSqrtT = V * sqrtT;
+            const float logTerm = std::log(S / K);
+            const float halfVSq = 0.5f * V * V;
+
+            const float d1 = (logTerm + (R + halfVSq) * T) / sigSqrtT;
+            const float d2 = d1 - sigSqrtT;
+
+            const float Nd1 = cndf_inline(d1);
+            const float Nd2 = cndf_inline(d2);
+
+            const float future = K * std::exp(-R * T);
+
+            const float call = S * Nd1 - future * Nd2;
+            const float put  = call + future - S; // put-call parity
+
+            call_ptr[i + u] = call;
+            put_ptr[i + u]  = put;
+        }
+    }
+
+    for (; i < n; ++i) {
+        const float S = s_ptr[i];
+        const float K = k_ptr[i];
+        const float R = r_ptr[i];
+        const float V = v_ptr[i];
+        const float T = t_ptr[i];
+
+        const float sqrtT = std::sqrt(T);
+        const float sigSqrtT = V * sqrtT;
+        const float logTerm = std::log(S / K);
+        const float halfVSq = 0.5f * V * V;
+
+        const float d1 = (logTerm + (R + halfVSq) * T) / sigSqrtT;
+        const float d2 = d1 - sigSqrtT;
+
+        const float Nd1 = cndf_inline(d1);
+        const float Nd2 = cndf_inline(d2);
+
+        const float future = K * std::exp(-R * T);
+
+        const float call = S * Nd1 - future * Nd2;
+        const float put  = call + future - S;
+
+        call_ptr[i] = call;
+        put_ptr[i]  = put;
+    }
 }
 
 void naive_BlkSchls_wrapper(void *ctx) {

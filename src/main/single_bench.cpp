@@ -11,6 +11,7 @@
 #include "graph.h"
 #include "filter_gradient.h"
 #include "matmul.h"
+#include "blackscholes.h"
 
 int main() {
     std::uint32_t seed = 12345u;
@@ -47,11 +48,19 @@ int main() {
     //std::println("\tGraph: node_count={}, avg_degree={}",node_count, avg_degree);
 
     //matmul
-    matmul_args matmul_args_naive;
-    matmul_args matmul_args_stu;
-    initialize_matmul(matmul_args_naive, 512, seed);
-    initialize_matmul(matmul_args_stu, 512, seed);
-    std::println("\tMatMul: n={}", matmul_args_naive.n);
+    //matmul_args matmul_args_naive;
+    //matmul_args matmul_args_stu;
+    //initialize_matmul(matmul_args_naive, 512, seed);
+    //initialize_matmul(matmul_args_stu, 512, seed);
+    //std::println("\tMatMul: n={}", matmul_args_naive.n);
+
+    //blackscholes
+    blackscholes_args blkSchls_args_naive;
+    blackscholes_args blkSchls_args_stu;
+
+    initialize_blackscholes(blkSchls_args_naive, 81920, seed);
+    initialize_blackscholes(blkSchls_args_stu, 81920, seed);
+    std::cout << "\tBlack-Scholes: options={}" << blkSchls_args_naive.spot_price.size() << std::endl;
 
     std::vector<bench_t> benchmarks = {
                 //{"ReLU (Naive)",
@@ -109,22 +118,37 @@ int main() {
                 //&graph_args_stu,
                 //&graph_args_naive,
                 //BASELINE_GRAPH}
-                {"MatMul (Naive)",
-                 naive_matmul_wrapper,
-                 naive_matmul_wrapper,
-                 matmul_check,
-                 &matmul_args_naive,
-                 &matmul_args_naive,
-                 BASELINE_MATMUL},
+                //{"MatMul (Naive)",
+                // naive_matmul_wrapper,
+                // naive_matmul_wrapper,
+                // matmul_check,
+                // &matmul_args_naive,
+                // &matmul_args_naive,
+                // BASELINE_MATMUL},
 
-                {"MatMul (Stu)",
-                 stu_matmul_wrapper,
-                 naive_matmul_wrapper,
-                 matmul_check,
-                 &matmul_args_naive,
-                 &matmul_args_naive,
-                 BASELINE_MATMUL}
-                
+                //{"MatMul (Stu)",
+                // stu_matmul_wrapper,
+                // naive_matmul_wrapper,
+                // matmul_check,
+                // &matmul_args_naive,
+                // &matmul_args_naive,
+                // BASELINE_MATMUL}
+
+                {"BlkSchls (Naive)",
+                 naive_BlkSchls_wrapper,   
+                 naive_BlkSchls_wrapper,
+                 BlkSchls_check,
+                 &blkSchls_args_naive,
+                 &blkSchls_args_naive,
+                 BASELINE_BLACKSCHOLES},
+
+                {"BlkSchls (Stu)",
+                 stu_BlkSchls_wrapper,
+                 naive_BlkSchls_wrapper,
+                 BlkSchls_check,
+                 &blkSchls_args_stu,
+                 &blkSchls_args_naive,
+                 BASELINE_BLACKSCHOLES}
     };
     std::cout << "\nRunning Benchmarks...\n";
     std::cout << "--------------------------------------------------------\n";
