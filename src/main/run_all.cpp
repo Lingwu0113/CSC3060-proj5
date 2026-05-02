@@ -24,10 +24,12 @@ int main() {
 
     std::uint32_t seed = 12345u;
 
-    blackscholes_args black_args;
-    initialize_blackscholes(black_args, 81920, seed);
-    std::cout << "\tBlack-Scholes options: " << black_args.spot_price.size()
-              << '\n';
+    blackscholes_args black_args_naive;
+    blackscholes_args black_args_stu;
+    initialize_blackscholes(black_args_naive, 81920, seed);
+    initialize_blackscholes(black_args_stu, 81920, seed);
+    std::cout << "\tBlack-Scholes options: "
+              << black_args_naive.spot_price.size() << '\n';
 
     sparse_spmm_args sparse_args;
     initialize_spmm(sparse_args, 512, 512, -1, {}, seed);
@@ -37,16 +39,22 @@ int main() {
 
     constexpr size_t relu_size = 1024000;
     relu_args relu_args_naive;
+    relu_args relu_args_stu;
     initialize_relu(&relu_args_naive, relu_size, seed);
+    initialize_relu(&relu_args_stu, relu_size, seed);
     std::println("\tReLU: vector length={}", relu_size);
 
     constexpr size_t bitwise_size = 1024000;
     bitwise_args bitwise_args_naive;
+    bitwise_args bitwise_args_stu;
     initialize_bitwise(&bitwise_args_naive, bitwise_size, seed);
+    initialize_bitwise(&bitwise_args_stu, bitwise_size, seed);
     std::println("\tBitwise: vector length={}", bitwise_size);
 
     matmul_args matmul_args_naive;
+    matmul_args matmul_args_stu;
     initialize_matmul(matmul_args_naive, 512, seed);
+    initialize_matmul(matmul_args_stu, 512, seed);
     std::cout << "\tMatMul: n=" << matmul_args_naive.n << '\n';
 
     trace_replay_args trace_args_naive;
@@ -57,7 +65,9 @@ int main() {
     constexpr std::size_t graph_node_count = 1024000;
     constexpr int graph_avg_degree = 8;
     graph_args graph_args_naive;
+    graph_args graph_args_stu;
     initialize_graph(&graph_args_naive, graph_node_count, graph_avg_degree, seed);
+    initialize_graph(&graph_args_stu, graph_node_count, graph_avg_degree, seed);
     std::cout << "\tGraph: node_count=" << graph_node_count
               << ", avg_degree=" << graph_avg_degree << '\n';
 
@@ -84,12 +94,12 @@ int main() {
     std::cout << "\tFilter Gradient: " << HEIGHT << " x " << WIDTH << '\n';
 
     std::vector<bench_t> benchmarks = {
-        {"Black-Scholes (Naive)",
-         naive_BlkSchls_wrapper,
+        {"Black-Scholes (student)",
+         stu_BlkSchls_wrapper,
          naive_BlkSchls_wrapper,
          BlkSchls_check,
-         &black_args,
-         &black_args,
+         &black_args_stu,
+         &black_args_naive,
          BASELINE_BLACKSCHOLES},
         {"Sparse SpMM (Student)",
          stu_sparse_spmm_wrapper,
@@ -98,25 +108,25 @@ int main() {
          &sparse_args,
          &sparse_args,
          BASELINE_SPARSE_SPMM},
-        {"ReLU (Naive)",
-         naive_relu_wrapper,
+        {"ReLU (Student)",
+         stu_relu_wrapper,
          naive_relu_wrapper,
          relu_check,
-         &relu_args_naive,
+         &relu_args_stu,
          &relu_args_naive,
          BASELINE_RELU},
-        {"Bitwise (Naive)",
-         naive_bitwise_wrapper,
+        {"Bitwise (Student)",
+         stu_bitwise_wrapper,
          naive_bitwise_wrapper,
          bitwise_check,
-         &bitwise_args_naive,
+         &bitwise_args_stu,
          &bitwise_args_naive,
          BASELINE_BITWISE},
-        {"MatMul (Naive)",
-         naive_matmul_wrapper,
+        {"MatMul (Student)",
+         stu_matmul_wrapper,
          naive_matmul_wrapper,
          matmul_check,
-         &matmul_args_naive,
+         &matmul_args_stu,
          &matmul_args_naive,
          BASELINE_MATMUL},
         {"Trace Replay (Student)",
@@ -128,9 +138,9 @@ int main() {
          BASELINE_TRACE_REPLAY},
         {"Graph (Student)",
          stu_graph_wrapper,
-         stu_graph_wrapper,
+         naive_graph_wrapper,
          graph_check,
-         &graph_args_naive,
+         &graph_args_stu,
          &graph_args_naive,
          BASELINE_GRAPH},
         {"GRFF (Student)",
