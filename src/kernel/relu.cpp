@@ -31,9 +31,15 @@ void naive_relu(std::span<float> data) {
 }
 
 void stu_relu(std::span<float> data) {
-    // TODO: Implement your version, and call it in stu_relu
-    for (auto &value : data) {
-        value = std::max(0.0f, value);
+    float* p = data.data();
+    const std::size_t n = data.size();
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC ivdep
+#endif
+    for (std::size_t i = 0; i < n; ++i) {
+        const float x = p[i];
+        p[i] = (x > 0.0f) ? x : 0.0f;
     }
 }
 

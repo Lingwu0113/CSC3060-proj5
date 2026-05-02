@@ -24,12 +24,12 @@ int main() {
     //std::println("\tReLU: vector length={}", relu_size);
 
     //bitwise
-    //constexpr size_t bitwise_size = 1024000;
-    //bitwise_args bitwise_args_naive;
-    //bitwise_args bitwise_args_stu;
-    //initialize_bitwise(&bitwise_args_naive, bitwise_size, seed);
-    //initialize_bitwise(&bitwise_args_stu, bitwise_size, seed);
-    //std::println("\tBitwise: vector length={}", bitwise_size);
+    constexpr size_t bitwise_size = 1024000;
+    bitwise_args bitwise_args_naive;
+    bitwise_args bitwise_args_stu;
+    initialize_bitwise(&bitwise_args_naive, bitwise_size, seed);
+    initialize_bitwise(&bitwise_args_stu, bitwise_size, seed);
+    std::println("\tBitwise: vector length={}", bitwise_size);
 
     //filter_gradient
     //constexpr size_t width = 1024;
@@ -55,12 +55,12 @@ int main() {
     //std::println("\tMatMul: n={}", matmul_args_naive.n);
 
     //blackscholes
-    blackscholes_args blkSchls_args_naive;
-    blackscholes_args blkSchls_args_stu;
+    //blackscholes_args blkSchls_args_naive;
+    //blackscholes_args blkSchls_args_stu;
 
-    initialize_blackscholes(blkSchls_args_naive, 81920, seed);
-    initialize_blackscholes(blkSchls_args_stu, 81920, seed);
-    std::cout << "\tBlack-Scholes: options={}" << blkSchls_args_naive.spot_price.size() << std::endl;
+    //initialize_blackscholes(blkSchls_args_naive, 81920, seed);
+    //initialize_blackscholes(blkSchls_args_stu, 81920, seed);
+    //std::cout << "\tBlack-Scholes: options={}" << blkSchls_args_naive.spot_price.size() << std::endl;
 
     std::vector<bench_t> benchmarks = {
                 //{"ReLU (Naive)",
@@ -87,13 +87,13 @@ int main() {
                 //&bitwise_args_naive,
                 //BASELINE_BITWISE},
 
-                //{"Bitwise (Stu)",
-                //stu_bitwise_wrapper,
-                //naive_bitwise_wrapper,
-                //bitwise_check,
-                //&bitwise_args_stu,
-                //&bitwise_args_naive,
-                //BASELINE_BITWISE},
+                {"Bitwise (Stu)",
+                stu_bitwise_wrapper,
+                naive_bitwise_wrapper,
+                bitwise_check,
+                &bitwise_args_stu,
+                &bitwise_args_naive,
+                BASELINE_BITWISE},
 
                 //{"FilterGradient",
                 //stu_filter_gradient_wrapper,
@@ -134,21 +134,21 @@ int main() {
                 // &matmul_args_naive,
                 // BASELINE_MATMUL}
 
-                {"BlkSchls (Naive)",
-                 naive_BlkSchls_wrapper,   
-                 naive_BlkSchls_wrapper,
-                 BlkSchls_check,
-                 &blkSchls_args_naive,
-                 &blkSchls_args_naive,
-                 BASELINE_BLACKSCHOLES},
+                //{"BlkSchls (Naive)",
+                //naive_BlkSchls_wrapper,   
+                //naive_BlkSchls_wrapper,
+                //BlkSchls_check,
+                //&blkSchls_args_naive,
+                //&blkSchls_args_naive,
+                //BASELINE_BLACKSCHOLES},
 
-                {"BlkSchls (Stu)",
-                 stu_BlkSchls_wrapper,
-                 naive_BlkSchls_wrapper,
-                 BlkSchls_check,
-                 &blkSchls_args_stu,
-                 &blkSchls_args_naive,
-                 BASELINE_BLACKSCHOLES}
+                //{"BlkSchls (Stu)",
+                //stu_BlkSchls_wrapper,
+                //naive_BlkSchls_wrapper,
+                //BlkSchls_check,
+                //&blkSchls_args_stu,
+                //&blkSchls_args_naive,
+                //BASELINE_BLACKSCHOLES}
     };
     std::cout << "\nRunning Benchmarks...\n";
     std::cout << "--------------------------------------------------------\n";
